@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="680" viewBox="0 0 900 680" role="img" aria-labelledby="title description">
+  <title id="title">Product image unavailable</title>
+  <desc id="description">A minimal shopping bag illustration</desc>
+  <defs>
+    <linearGradient id="background" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#eef2ff"/>
+      <stop offset="1" stop-color="#f8fafc"/>
+    </linearGradient>
+  </defs>
+  <rect width="900" height="680" fill="url(#background)"/>
+  <path d="M350 282h200l24 202H326l24-202Z" fill="#fff" stroke="#94a3b8" stroke-width="12" stroke-linejoin="round"/>
+  <path d="M399 286v-34c0-30 22-54 51-54s51 24 51 54v34" fill="none" stroke="#2563eb" stroke-width="12" stroke-linecap="round"/>
+  <circle cx="450" cy="379" r="28" fill="#dbeafe"/>
+</svg>
