@@ -1,143 +1,164 @@
-# Vibe Market
+<div align="center">
 
-E-commerce product browsing interface with a multi-filter sidebar: category checklist, dual-point price range slider, and minimum star rating - all applied together and reflected in the grid instantly, with no submit button.
+# 🛍️ Vibe Market
 
-The React client handles presentation and interaction only. The Express server owns the master inventory, query validation, combinatorial filtering, sorting, result counts, and catalogue metadata.
+**An e-commerce browsing interface with a real-time multi-filter sidebar.**
 
-```text
-React client  --GET /api/products?categories&minPrice&maxPrice&minRating&sort-->  Express API
-              <--------------  matching products + catalogue metadata  ---------
-```
+Filter by category, price range, and star rating simultaneously — results update instantly, with zero submit buttons.
 
-## Features
+[![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=black)](https://react.dev)
+[![Vite](https://img.shields.io/badge/Vite-6-646CFF?logo=vite&logoColor=white)](https://vite.dev)
+[![Express](https://img.shields.io/badge/Express-4-000000?logo=express&logoColor=white)](https://expressjs.com)
+[![Node](https://img.shields.io/badge/Node-20+-339933?logo=node.js&logoColor=white)](https://nodejs.org)
+[![Tests](https://img.shields.io/badge/tests-14%20passing-brightgreen)](server/test)
 
-- Multiple category selection
-- Native, keyboard-accessible dual price range control
-- Minimum star rating radio controls from 1 to 5
-- Server-side intersection filtering
-- Server-side price and rating sorting
-- Graceful handling of empty filters
-- Empty state with a one-click reset
-- Applied-filter chips and live result count
-- Loading skeletons, non-blocking updates, request cancellation, and retryable errors
-- Sticky desktop filter panel and responsive mobile filter drawer
-- Premium image-led UI with visible focus states and reduced-motion support
+</div>
 
-## Requirements coverage
+---
 
-| Requirement | Where it lives |
-| --- | --- |
-| Sticky sidebar: category checklist, dual price slider, 1-5 star radios | [FilterSidebar.jsx](client/src/components/FilterSidebar.jsx), [PriceRangeFilter.jsx](client/src/components/PriceRangeFilter.jsx) |
-| Product grid cards with thumbnail, price, rating, name | [ProductCard.jsx](client/src/components/ProductCard.jsx), [ProductGrid.jsx](client/src/components/ProductGrid.jsx) |
-| Instant feedback, no submit button | [App.jsx](client/src/App.jsx) - every control change refetches; slider input is debounced and in-flight requests are aborted |
-| Zero-match screen with a "Reset filters" button | [ProductGrid.jsx](client/src/components/ProductGrid.jsx) |
-| Combinatorial intersect filtering over the master array | [catalogService.js](server/src/services/catalogService.js) - `filterAndSortProducts` |
-| Graceful null handling for cleared filters | [catalogService.js](server/src/services/catalogService.js) + [parseProductQuery.js](server/src/utils/parseProductQuery.js) |
-| Sort By dropdown, top right of the grid | [App.jsx](client/src/App.jsx) - `Featured`, `Price: Low to High`, `Top Rated First` |
-| Filter first, then sort the remaining set | [catalogService.js](server/src/services/catalogService.js) - filter runs before `sort`, on a copy |
-| Business logic on the server | All filtering, sorting, validation, and counts are computed in `server/src` |
-
-## Technology
-
-- Client: React 18, Vite, JavaScript, CSS, Lucide icons, self-hosted Inter font files
-- Server: Node.js, Express, JavaScript
-- Tests: Node's built-in test runner
-- Data: Local server-side product array
-- Development: npm workspaces and Concurrently
-
-The project intentionally does not use Supabase, another BaaS, a database, or deployment infrastructure. None is needed for the assessment scope.
-
-## Run locally
-
-Requirements:
-
-- Node.js 20 or newer
-- npm 10 or newer
-
-From the repository root:
+## Quick start
 
 ```bash
 npm install
 npm run dev
 ```
 
-Open `http://localhost:5173`. The Express API runs at `http://localhost:4000` and Vite proxies `/api` requests to it.
+| Service | URL |
+| --- | --- |
+| Web app | http://localhost:5173 |
+| API | http://localhost:4000 |
 
-No environment variables are required.
+Vite proxies `/api` → port 4000. No environment variables needed.
 
-## Verification commands
+---
 
-```bash
-npm test
-npm run build
-npm run check
+## How it works
+
+All business logic lives on the server. The client only builds a query string and renders what comes back.
+
+```text
+┌─────────────────────┐   GET /api/products?categories=…&minPrice=…   ┌──────────────────────┐
+│   React client      │  ──────────────────────────────────────────▶  │   Express API        │
+│                     │                                               │                      │
+│  • sidebar controls │                                               │  1. validate query   │
+│  • grid rendering   │  ◀──────────────────────────────────────────  │  2. FILTER inventory │
+│  • debounce/abort   │      { products[], meta{ count, … } }         │  3. SORT the result  │
+└─────────────────────┘                                               └──────────────────────┘
 ```
 
-`npm run check` runs all backend tests and then creates the frontend production build.
+**The pipeline is filter-first, sort-second** — the master inventory array is never mutated:
+
+```js
+const matching = inventory.filter(/* category AND price AND rating */);
+return matching.sort(sorters[filters.sort]);   // sorts the copy, not the source
+```
+
+---
+
+## Features
+
+**Filtering**
+- ✅ Multi-select category checklist (selections are OR-ed together)
+- ✅ Dual-point price range slider, keyboard accessible
+- ✅ Minimum star rating radios, 1–5 plus "Any"
+- ✅ Filter groups are AND-ed; price bounds are inclusive
+- ✅ Cleared filters gracefully bypass reduction → full inventory returns
+
+**Interaction**
+- ✅ Instant updates on every click and drag — no submit button
+- ✅ Empty state with one-click "Reset filters" when nothing matches
+- ✅ Sort By dropdown: Featured · Price: Low to High · Top Rated First
+- ✅ Removable applied-filter chips + live result count
+- ✅ Slider requests debounced (180 ms); in-flight requests aborted
+
+**Polish**
+- ✅ Sticky desktop sidebar, slide-in mobile drawer
+- ✅ Loading skeletons, retryable errors, image fallbacks
+- ✅ Visible focus states and reduced-motion support
+
+---
 
 ## API
 
-### Health check
-
 ```http
 GET /api/health
-```
-
-### Product catalogue
-
-```http
 GET /api/products
-GET /api/products?categories=electronics,footwear&minPrice=100&maxPrice=200&minRating=4&sort=price_asc
+GET /api/products?categories=electronics,footwear&minPrice=100&maxPrice=500&minRating=4&sort=price_asc
 ```
-
-Supported query parameters:
 
 | Parameter | Accepted values | Default |
 | --- | --- | --- |
-| `categories` | Comma-separated category slugs | All categories |
-| `minPrice` | Non-negative number | No lower bound |
-| `maxPrice` | Non-negative number | No upper bound |
-| `minRating` | Integer from 1 to 5 | Any rating |
-| `sort` | `default`, `price_asc`, `rating_desc` | `default` |
+| `categories` | Comma-separated slugs: `electronics`, `apparel`, `footwear` | all |
+| `minPrice` | Non-negative number | no lower bound |
+| `maxPrice` | Non-negative number | no upper bound |
+| `minRating` | **Integer** 1–5 | any |
+| `sort` | `default` · `price_asc` · `rating_desc` | `default` |
 
-The response contains the matching products plus the total count, result count, category metadata, absolute price range, and normalized applied filters. Invalid parameters return HTTP `400` with a readable error message.
+**Response**
 
-## Filtering rules
+```jsonc
+{
+  "products": [ { "id", "name", "category", "price", "rating", "image", "featuredRank" } ],
+  "meta": {
+    "total": 18,                    // full inventory size
+    "count": 9,                     // matches after filtering
+    "categories": [ { "value", "label", "count" } ],
+    "absolutePriceRange": { "min": 39, "max": 899 },
+    "appliedFilters": { /* normalized */ }
+  }
+}
+```
 
-- Selected categories are OR-ed with one another.
-- Category, price, and rating groups are AND-ed together.
-- Price boundaries are inclusive.
-- Rating means greater than or equal to the selected minimum.
-- Missing filters bypass that criterion.
-- The server filters before sorting.
-- Sorting is performed on the filtered copy and never mutates the master inventory.
+Invalid input returns `400` with a readable message, e.g. `{"error":"minRating must be an integer from 1 to 5."}`
+
+---
+
+## Testing
+
+```bash
+npm test        # 14 unit tests — filtering, sorting, validation
+npm run build   # production build of the client
+npm run check   # both of the above
+```
+
+📋 **[Full testing guide → docs/TESTING.md](docs/TESTING.md)** — copy-paste API checks and a step-by-step UI validation checklist.
+
+---
 
 ## Project structure
 
 ```text
-client/
-  public/product-placeholder.svg
+server/                         ← all business logic
   src/
-    components/               Reusable catalogue and filter UI
-    hooks/useDebouncedValue.js Slider request debounce
-    services/productsApi.js   Query construction and API client
-    App.jsx                   State, data flow, and page composition
-    styles.css                Design system and responsive layout
-server/
+    data/products.js              master inventory (18 items) + category labels
+    services/catalogService.js    ★ filter + sort pipeline, metadata
+    utils/parseProductQuery.js    validation & normalization
+    routes/products.js            HTTP contract
+    app.js · server.js            Express wiring
+  test/                           14 tests
+client/                         ← presentation only
   src/
-    data/products.js          Master inventory and category labels
-    routes/products.js        HTTP route and response contract
-    services/catalogService.js Pure filtering, sorting, and metadata
-    utils/parseProductQuery.js Validation and normalization
-    app.js                    Express application
-    server.js                 Server entry point
-  test/                       Business-logic and validation tests
+    components/                   Sidebar · PriceRange · Grid · Card · Chips · Header
+    hooks/useDebouncedValue.js    slider request debounce
+    services/productsApi.js       query building + fetch
+    App.jsx                       state & data flow
+    styles.css                    design system
 docs/
-  IMPLEMENTATION_PLAN.md    Architecture and design record
+  IMPLEMENTATION_PLAN.md          architecture & design record
+  TESTING.md                      validation guide
 ```
 
-Product photography is loaded from fixed Unsplash URLs. A local SVG placeholder is displayed if an external image cannot load.
+---
 
-## Additional documentation
+## Tech stack
 
-- [Implementation plan](docs/IMPLEMENTATION_PLAN.md) - architecture, data design, and verification notes
+**Client** React 18 · Vite 6 · Lucide icons · self-hosted Inter · plain CSS
+**Server** Node.js 20 · Express 4 · ES modules
+**Tests** Node's built-in test runner (zero test dependencies)
+**Data** In-memory server-side array — no database or BaaS needed for this scope
+
+---
+
+<div align="center">
+<sub>Product photography from Unsplash · local SVG placeholder on load failure</sub>
+</div>
