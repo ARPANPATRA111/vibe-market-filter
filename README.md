@@ -12,6 +12,12 @@ Filter by category, price range, and star rating simultaneously — results upda
 [![Node](https://img.shields.io/badge/Node-20+-339933?logo=node.js&logoColor=white)](https://nodejs.org)
 [![Tests](https://img.shields.io/badge/tests-14%20passing-brightgreen)](server/test)
 
+<br>
+
+<img src="docs/screenshots/catalogue.png" alt="Vibe Market catalogue with the filter sidebar, product grid, and Sort By dropdown" width="900">
+
+<sub>Sticky sidebar (category · price range · rating) on the left, live product grid and Sort By on the right.</sub>
+
 </div>
 
 ---
